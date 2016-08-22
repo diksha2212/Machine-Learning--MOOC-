@@ -4,4 +4,4 @@ This repository contains code for all assignments of the Machine Learning Course
 
 1.Regression
 2.Classification
-
+3.Clustering
