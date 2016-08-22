@@ -1,0 +1,113 @@
+## Import Libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn
+
+##Loading Data
+house_train=pd.read_csv("kc_house_train_data.csv")
+house_test=pd.read_csv("kc_house_test_data.csv")
+
+##setting features and targets
+
+feature_train=np.array(house_train[example_features])
+target_train=np.array(house_train['price'])
+feature_test=np.array(house_test[example_features])
+target_test=np.array(house_test['price'])
+
+## get feature Matrix
+def get_feature_matrix(data,features,output):
+    data['constant']=1
+    features=['constant']+features
+    features_data=data[features]
+    feature_matrix=np.array(features_data)
+    output_array=np.array(data[output])
+    return (feature_matrix,output_array)
+
+##predicting output
+def predict_output(feature_matrix, weights):
+    predictions = np.dot(feature_matrix, weights)
+    return(predictions)
+
+##GETTING FEATURE MATRIX    
+simple_features = ['sqft_living', 'bedrooms']
+my_output = 'price'
+(simple_feature_matrix, output) = get_feature_matrix(house_train, simple_features, my_output)
+
+simple_feature_matrix, norms = normalize_features(simple_feature_matrix)
+weights = np.array([1., 4., 1.])
+prediction = predict_output(simple_feature_matrix, weights)
+
+##minimize cost over single feature i --COORDINATE DESCENT
+
+def lasso_coordinate_descent_step(i, feature_matrix, output, weights, l1_penalty):
+    # compute prediction
+     prediction =predict_output(feature_matrix, weights)
+    # compute ro[i] = SUM[ [feature_i]*(output - prediction + weight[i]*[feature_i]) ]    
+     feature_i=feature_matrix[:,i]  
+     ro_i = sum(feature_i*(output - prediction + weights[i]*feature_i))
+
+     if i == 0: # intercept -- do not regularize
+        new_weight_i = ro_i 
+     elif ro_i < -l1_penalty/2.:
+        new_weight_i = ro_i + l1_penalty/2
+     elif ro_i > l1_penalty/2.:
+        new_weight_i = ro_i -l1_penalty/2
+     else:
+        new_weight_i =0.
+    
+     return new_weight_i
+     
+     ##opimizing all features by corrdinate descent##
+def lasso_cyclical_coordinate_descent(feature_matrix, output, initial_weights, l1_penalty, tolerance):
+    converged = False
+    weights=initial_weights
+    change =[]
+    while not converged:
+     change =[]
+     for i in range(len(initial_weights)):
+        old_weights_i = weights[i]
+        new_weights = lasso_coordinate_descent_step(i, feature_matrix, output, weights, l1_penalty)
+        weights[i] =new_weights
+        change.append(new_weights-old_weights_i)
+        if (abs(np.max(change)) < tolerance):
+         converged = True
+    return(weights)
+    
+simple_features = ['sqft_living', 'bedrooms']
+my_output = 'price'
+initial_weights = np.zeros(3)
+l1_penalty = 1e7
+tolerance = 1.0
+
+## running coordinate descent ##
+weights = lasso_cyclical_coordinate_descent(normalized_simple_feature_matrix, output,
+                                            initial_weights, l1_penalty, tolerance)
+
+### getting coordinate descent for all features ##
+
+all_features = ['bedrooms',
+                'bathrooms',
+                'sqft_living',
+                'sqft_lot',
+                'floors',
+                'waterfront', 
+                'view', 
+                'condition', 
+                'grade',
+                'sqft_above',
+                'sqft_basement',
+                'yr_built', 
+                'yr_renovated']
+                
+(all_feature_matrix, output) =  get_feature_matrix(house_train, all_features, my_output)
+(feature_matrix, norms) = normalize_features(all_feature_matrix)
+
+##RUNNING COORDINATE DESCENT FOR ALL FEATURES
+initial_weights=np.zeros(14)
+weights = lasso_cyclical_coordinate_descent(normalized_all_feature_matrix, output,
+                                            initial_weights, l1_penalty, tolerance)
+
+
+
