@@ -1,0 +1,3 @@
+The amazon product dataset is used for implementing all classification algorithms.
+
+Lendung club data is used specifically for decision trees and boosting.
